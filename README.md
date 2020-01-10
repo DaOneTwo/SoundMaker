@@ -33,3 +33,31 @@ Moira, Monica, Nora, Paulina, Samantha, Sara, Satu, Sin-ji, Tessa,
 Thomas, Ting-Ting, Veena, Victoria, Xander, Yelda, Yuna, Yuri, Zosia,
 Zuzana
 
+
+### Running client.py file
+
+The client.py file contains a program built to communicate with a remote
+computer that is running the server.
+
+To get things working properly you will need to open the file in some
+sort of text editor, make a few small changes at the bottom of the file,
+and then save it. The changes needed are...
+
+* put your name in the parenthesis following the name=
+* put the destination server's ip in the appropriate place in a similar
+  manner
+
+Once those changes are saved go ahead and run the file and see what
+happens.
+
+Open a command prompt (terminal) and type the command
+
+python3 /path/to/your/file/client.py
+
+Once you have ran the file the first time there are som additional lines
+below the one you just changed. Experiment with removing the #
+characters on those lines. Then save and run the file again to see what
+happens. Once you have done that you can experiment as you like just
+remember to keep things "clean".
+
+![cleintInitialization.png](cleintInitialization.png)
