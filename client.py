@@ -30,33 +30,12 @@ class TextToSpeechClient(SocketClient):
     def say(self, voice: str, text: str):
         self._send_data(f'say|{voice}|{text}')
 
-    def conversation(self, text_list: List[Tuple]):
-        """play a conversation
-        #ToDo: not implemented in other areas will require work in (server & tts.py)
-        """
-        conversation = []
-        for tup in text_list:
-            conversation.extend(tup)
-        self._send_data(f'conversation|{"|".join(conversation)}')
-
-    # def play_sound(self, sound_name: str, wait: float = 0.0, count: int = 1):
-    #     for i in range(count):
-    #         self._send_data(f'play|{sound_name}')
-    #         self.wait(wait)
-    #
-    # def play_routine(self, routine: List[Tuple], wait: float = 0.0, repeat: int = 1):
-    #     """play a "routine" or a sound arrangement"""
-    #     for i in range(repeat):
-    #         for item in routine:
-    #             self.play_sound(*item)
-    #         self.wait(wait)
-
 
 if __name__ == '__main__':
-    sc = TextToSpeechClient(name='Andy', server_ip='127.0.0.1')
+    sc = TextToSpeechClient(name='Your Name Here', server_ip='127.0.0.1')
 
-    sc.say('Samantha', 'Knock Knock')
-    sc.say('Karen', 'Who is there?')
-    sc.say('Samantha', 'Etch')
-    sc.say('Karen', 'Etch Who')
-    sc.say('Samantha', 'Bless You!')
+    # sc.say('Samantha', 'Knock Knock')
+    # sc.say('Karen', 'Who is there?')
+    # sc.say('Samantha', 'Etch')
+    # sc.say('Karen', 'Etch Who')
+    # sc.say('Samantha', 'Bless You!')
