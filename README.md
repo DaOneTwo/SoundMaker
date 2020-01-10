@@ -40,8 +40,18 @@ The client.py file contains a program built to communicate with a remote
 computer that is running the server.
 
 To get things working properly you will need to open the file in some
-sort of text editor, make a few small changes at the bottom of the file,
-and then save it. The changes needed are...
+sort of text editor. At the bottom of the file you will find some text
+that looks like this...
+
+```python
+if __name__ == '__main__':
+    sc = TextToSpeechClient(name='Your Name Here', server_ip='127.0.0.1')
+
+    # sc.say('Samantha', 'Knock Knock')
+```
+
+You will need to make a few changes and then save it. The changes needed
+are...
 
 * put your name in the parenthesis following the name=
 * put the destination server's ip in the appropriate place in a similar
@@ -52,12 +62,10 @@ happens.
 
 Open a command prompt (terminal) and type the command
 
-python3 /path/to/your/file/client.py
+`python3 /path/to/your/file/client.py`
 
-Once you have ran the file the first time there are some additional lines
-below the one you just changed. Experiment with removing the #
+Once you have ran the file the first time there are some additional
+lines below the one you just changed. Experiment with removing the #
 characters on those lines. Then save and run the file again to see what
 happens. Once you have done that you can experiment as you like just
 remember to keep things "clean".
-
-![cleintInitialization.png](cleintInitialization.png)
