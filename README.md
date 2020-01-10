@@ -54,7 +54,7 @@ Open a command prompt (terminal) and type the command
 
 python3 /path/to/your/file/client.py
 
-Once you have ran the file the first time there are som additional lines
+Once you have ran the file the first time there are some additional lines
 below the one you just changed. Experiment with removing the #
 characters on those lines. Then save and run the file again to see what
 happens. Once you have done that you can experiment as you like just
