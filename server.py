@@ -11,9 +11,9 @@ from logger import get_logger
 
 
 class SocketServer:
-    """a very basic socket server for listening to a socket for inbound requests.  inbound requests are simply put in
-    a queue.  Nothing else is done with them.
-    inheriting/extending objects should add the functionality to handle requests which they receive.
+    """a very basic socket server establishes a listening socket.  Inbound requests are simply put in
+    a queue.  Nothing else is done with them.  Mixin classes inheriting/extending objects will need to add their
+    own message processing capabilities.
     """
 
     def __init__(self, listen_port: int = 30000, log_level='DEBUG'):
@@ -23,7 +23,7 @@ class SocketServer:
         self._listen_socket = None
         self._listen_port = listen_port
         self._listen_thread = None
-        self.inbound_queue = Queue()
+        self.inbound_msg_queue = Queue()
 
     def _start_listen_thread(self):
         """start a socket listener and related thread"""
@@ -37,11 +37,11 @@ class SocketServer:
         self.logger.info(f'listen thread is running: {self._listen_thread.is_alive()}')
 
     def _receive_messages(self):
-        """the function that accept connections, receive messages and add them to the inbound_queue"""
+        """This method accepts connections, receives messages and add them to the inbound_queue.
+        This is run in a thread. started in _start_listen_thread"""
         while self.running is True:
             connection, client_address = self._listen_socket.accept()
             try:
-                # self._listen_socket.settimeout(.001)
                 self.logger.debug(f'connection received from {client_address}')
                 data = ''
                 while True:
@@ -51,11 +51,12 @@ class SocketServer:
                     data += part.decode()
                 connection.close()
                 self.logger.debug(f'data received: {data}')
-                self.inbound_queue.put_nowait(item=(client_address, data))
+                self.inbound_msg_queue.put_nowait(item=(client_address, data))
             except:
                 pass
 
     def run(self):
+        """Start up the server.  Starts listening thread"""
         self._start_listen_thread()
 
 
@@ -66,13 +67,14 @@ class TextToSpeechServer(SocketServer):
     def __init__(self, listen_port: int = 30000, log_level='DEBUG'):
         super().__init__(listen_port=listen_port, log_level=log_level)
         self.welcome_new_clients = True
+        self.use_action_thread = True
 
         self._processing_thread = None
+        self.action_q = Queue()
 
         self.clients = {}
-        self.chatter_bot = pyttsx3.init()
-        self.voices = {voice.name.lower(): voice.id for voice in self.chatter_bot.getProperty('voices')}
-        del (self.chatter_bot)  # cannot use due to issue with underlying libraries...  Just saving memory
+        self.voices = self._get_voices()
+
         self.func_map = {
             'register': self._register_client,
             'say': self._text_to_speech
@@ -85,7 +87,7 @@ class TextToSpeechServer(SocketServer):
 
     def _handle_requests(self):
         while self.running is True:
-            request = self.inbound_queue.get()
+            request = self.inbound_msg_queue.get()
             self._handle_request(request)
 
     def _handle_request(self, request: tuple):
@@ -95,27 +97,28 @@ class TextToSpeechServer(SocketServer):
         command, *data = data.split('|')
         # get the function for the command passed and execute it.
         command_func = self.func_map.get(command)
-        command_func(ip, data)
-        # self.logger.info(f'executing command_func: {command_func}')
-        # exec_thread = threading.Thread(target=command_func, args=(ip, data), daemon=True)
-        # exec_thread.start()
-
+        if self.use_action_thread is True:
+            exec_thread = threading.Thread(target=command_func, args=(ip, data), daemon=True)
+            exec_thread.start()
+        else:
+            command_func(ip, data)
 
     def _register_client(self, ip, data):
         name = data[0]
         if all([ip, ip not in self.clients]):  # allows me to run things internally and not register and trigger welcome
             # implement welcome message easter egg for newly registered clients
-            self._welcome_new_client(name)
+            if self.welcome_new_clients is True:
+                self._welcome_new_client(name)
             self.clients[ip] = name
             self.logger.info(f'registered client {name} with the ip {ip}')
 
     def _welcome_new_client(self, name: str):
-        """plays a welcome for newly registered IPs  """
-        if self.welcome_new_clients is True:
-            playsound.playsound(str(self.sounds_fp.joinpath('Doorbell.wav')), block=True)
-            welcome_message = f'Hey everyone! {name} made it!  What a smarty pants!'
-            self._text_to_speech(ip='', data=['Samantha', welcome_message])
-            playsound.playsound(str(self.sounds_fp.joinpath('applause5.mp3')), block=True)
+        """plays a welcome for newly registered IPs only when configuration self.welcome_new_clients is True"""
+
+        playsound.playsound(str(self.sounds_fp.joinpath('Doorbell.wav')), block=True)
+        welcome_message = f'Hey everyone! {name} made it!  What a smarty pants!'
+        self._text_to_speech(ip='', data=['Samantha', welcome_message])
+        playsound.playsound(str(self.sounds_fp.joinpath('applause5.mp3')), block=True)
 
     # def _text_to_speech(self, ip, data):
     #     client_name = self._get_client_name(ip)
@@ -132,21 +135,31 @@ class TextToSpeechServer(SocketServer):
             # DO NOT like this subprocess thing but use it because of some issues with the open source modules and
             # threads on OSX operating systems.  This slows things down incredibly and lessens the experience a little.
             file_path = str(self.base_fp.joinpath("tts.py"))
-            self.logger.info(f'submitting subprocess for: {voice_name}, {text}')
+            self.logger.debug(f'submitting subprocess for: {voice_name}, {text}')
             x = subprocess.run(["python3", file_path, name, text], stdout=subprocess.PIPE)
-            self.logger.info(f'subprocess result: {x.returncode}')
+            self.logger.debug(f'subprocess result: {x.returncode}')
         except Exception as err:
             self.logger.error(str(err))
 
-    def _get_client_name(self, ip):
+    def _get_client_name(self, ip) -> str:
+        """get the name registered for this client IP"""
         return self.clients.get(ip, ip)
 
+    def _get_voices(self) -> dict:
+        """get the voices available for this server in a dictionary format.
+        key: voice name lowered
+        value: the id that needs to be used to set the voice
+        """
+        chatter_bot = pyttsx3.init()
+        return {voice.name.lower(): voice.id for voice in chatter_bot.getProperty('voices')}
+
+
     def run(self):
+        """Start the server.   starts listening thread then starts our message processing thread."""
         super().run()
         self._start_processing_thread()
 
-        # wake up the text to speech application
-        self._text_to_speech(ip='', data=('Samantha', 'Text To Speech Server is Ready'))
+        self._text_to_speech(ip='', data=('Samantha', 'Server is Ready'))
 
 
 # class SoundServer:
