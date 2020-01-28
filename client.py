@@ -33,9 +33,14 @@ class TextToSpeechClient(SocketClient):
 
 if __name__ == '__main__':
     sc = TextToSpeechClient(name='Your Name Here', server_ip='127.0.0.1')
+    
+    sc.say('Samantha', 'Knock Knock')
+    sc.wait(1.2)
+    sc.say('Karen', 'Who is there?')
+    sc.wait(1.3)
+    sc.say('Samantha', 'Etch')
+    sc.wait(.75)
+    sc.say('Karen', 'Etch Who')
+    sc.wait(.90)
+    sc.say('Samantha', 'Bless You!')
 
-    # sc.say('Samantha', 'Knock Knock')
-    # sc.say('Karen', 'Who is there?')
-    # sc.say('Samantha', 'Etch')
-    # sc.say('Karen', 'Etch Who')
-    # sc.say('Samantha', 'Bless You!')
