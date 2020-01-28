@@ -68,7 +68,7 @@ class TextToSpeechServer(SocketServer):
                  use_action_thread: bool = True):
         super().__init__(listen_port=listen_port, log_level=log_level)
         self.welcome_new_clients = welcome_new_clients
-        self.use_action_thread = True
+        self.use_action_thread = use_action_thread
 
         self._processing_thread = None
         self.action_q = Queue()
@@ -83,16 +83,21 @@ class TextToSpeechServer(SocketServer):
         }
 
     def _start_processing_thread(self):
+        """"start the processing thread.   This will execute the _handle_requests method."""
         self._processing_thread = threading.Thread(name='processing_thread', target=self._handle_requests)
         self._processing_thread.start()
 
     def _handle_requests(self):
+        """handle ech message that has been added to our inbound message queue.  Handle them in the order in which they
+        are out in"""
         while self.running is True:
             request = self.inbound_msg_queue.get()
             self._handle_request(request)
 
     def _handle_request(self, request: tuple):
-        """a request is stored in the form of a tuple... (('127.0.0.1', 56868), 'register|YourName')"""
+        """a request is stored in the form of a tuple... (('127.0.0.1', 56868), 'register|YourName').  Here we process
+        that.  Look up the function and dispatch it to run either synchronously or in a thread of it's own according to
+        the use_action_thread parameter"""
         connection_details, data = request
         ip, port = connection_details
         command, *data = data.split('|')
@@ -105,8 +110,11 @@ class TextToSpeechServer(SocketServer):
             command_func(ip, data)
 
     def _register_client(self, ip, data):
+        """ "Learn" the incoming IP and name combination for this Server run.  Each time a client runs it issues a
+        register command first."""
         name = data[0]
-        if all([ip, ip not in self.clients]):  # allows me to run things internally and not register and trigger welcome
+        # if known IP we will just skip doing any work including a welcome message if configured to play.
+        if all([ip, ip not in self.clients]):
             # implement welcome message easter egg for newly registered clients
             if self.welcome_new_clients is True:
                 self._welcome_new_client(name)
