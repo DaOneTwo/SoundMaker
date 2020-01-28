@@ -64,9 +64,10 @@ class TextToSpeechServer(SocketServer):
     base_fp = Path(__file__).parent
     sounds_fp = Path(base_fp.joinpath('sounds'))
 
-    def __init__(self, listen_port: int = 30000, log_level='DEBUG'):
+    def __init__(self, listen_port: int = 30000, log_level='DEBUG', welcome_new_clients: bool = False,
+                 use_action_thread: bool = True):
         super().__init__(listen_port=listen_port, log_level=log_level)
-        self.welcome_new_clients = True
+        self.welcome_new_clients = welcome_new_clients
         self.use_action_thread = True
 
         self._processing_thread = None
@@ -243,7 +244,7 @@ class TextToSpeechServer(SocketServer):
 
 
 if __name__ == '__main__':
-    server = TextToSpeechServer()
+    server = TextToSpeechServer(welcome_new_clients=True, use_action_thread=True)
     server.run()
 
     # engine = pyttsx3.init()
